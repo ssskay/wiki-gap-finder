@@ -47,6 +47,11 @@ try:
 except ImportError:
     sys.exit("Missing dependency 'PyYAML'. Install: pip3 install PyYAML --break-system-packages")
 
+from gapfinder import worklist as worklist_mod
+from gapfinder import verdicts as verdicts_mod
+from gapfinder import dossier as dossier_mod
+from gapfinder import search as search_mod
+
 
 # --------------------------------------------------------------------------- #
 # Constants & configuration
@@ -631,9 +636,46 @@ def run_triage(campaign: Campaign, session: PoliteSession) -> None:
     sys.exit(2)
 
 
-def build_dossier(campaign: Campaign, session: PoliteSession, name: str) -> None:
-    log.error("Stage 4 (dossier build) is not implemented yet.")
-    sys.exit(2)
+def _subject_dir(campaign: "Campaign", name: str) -> Path:
+    safe = name.replace(" ", "_").replace("/", "_")
+    d = campaign.output_dir() / safe
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def build_dossier(campaign: "Campaign", session, name: str, backend=None) -> None:
+    """Stage 4. If verdicts exist, render the dossier. Otherwise gather coverage,
+    build the worklist, and instruct the user to run the vetter subagent."""
+    subj_dir = _subject_dir(campaign, name)
+    verdicts_path = subj_dir / "vetting_verdicts.json"
+
+    if verdicts_path.exists():
+        data = verdicts_mod.load_verdicts(verdicts_path)
+        md = dossier_mod.render_dossier(data, subject={"name": name})
+        out = subj_dir / "dossier.md"
+        out.write_text(md)
+        log.info("wrote dossier -> %s", out)
+        print(f"\nDossier written: {out}\n")
+        return
+
+    # No verdicts yet: build the worklist from coverage search.
+    if backend is None:
+        backend = search_mod.DDGBackend(session)
+    hint = " ".join(campaign.search_hints)
+    query = f"{name} {hint}".strip()
+    log.info("dossier: no verdicts yet — gathering coverage for '%s'", name)
+    coverage = search_mod.search_web(query, backend=backend)
+    wl = worklist_mod.build_worklist(
+        campaign=campaign.name,
+        subject={"name": name},
+        coverage=coverage,
+        seed_claims=[],
+    )
+    path = worklist_mod.write_worklist(subj_dir, wl)
+    log.info("wrote worklist -> %s", path)
+    print(f"\nWorklist written: {path}")
+    print("Next: run the source-vetter subagent (skills/vet-sources) over this worklist,")
+    print(f"which writes {verdicts_path.name}. Then re-run --dossier to render.\n")
 
 
 def run_report(campaign: Campaign) -> None:
@@ -667,6 +709,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
                    help="skip the Wikidata SPARQL intake (use only CSV/txt name lists)")
     p.add_argument("--limit", type=int, metavar="N",
                    help="cap the number of candidate names processed (handy for testing)")
+    p.add_argument("--refresh-rsp", action="store_true",
+                   help="refresh the WP:RSP reliability cache before running")
+    p.add_argument("--search-backend", choices=["ddg", "firecrawl"], default="ddg",
+                   help="coverage-search backend for --dossier worklist building")
     p.add_argument("-v", "--verbose", action="store_true", help="DEBUG logging (logs every request)")
     return p
 
@@ -706,7 +752,12 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.dossier:
-        build_dossier(campaign, session, args.dossier)
+        if args.refresh_rsp:
+            from gapfinder import rsp as rsp_mod
+            rsp_mod.refresh_from_wikipedia(session)
+        backend = (search_mod.FirecrawlBackend() if args.search_backend == "firecrawl"
+                   else search_mod.DDGBackend(session))
+        build_dossier(campaign, session, args.dossier, backend=backend)
         return 0
 
     return 0
