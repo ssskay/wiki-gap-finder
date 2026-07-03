@@ -7,6 +7,7 @@ Structure only — never prose. Maps buckets to sections:
 """
 from __future__ import annotations
 
+from gapfinder import contract
 from gapfinder import verdicts as verdicts_mod
 
 _PROSE_NOTICE = (
@@ -15,7 +16,21 @@ _PROSE_NOTICE = (
 )
 
 
+def _cell(text: str) -> str:
+    """Make a string safe to place inside a Markdown table cell.
+
+    Quotes and claims are scraped verbatim from web pages, so they can contain
+    newlines (which end the table row) and pipes (which start a new column).
+    Neutralize both so a fact can never break out of the facts table — the
+    table structure IS the 'this is sourced' signal.
+    """
+    return str(text).replace("\r", " ").replace("\n", " ").replace("|", "\\|")
+
+
 def render_dossier(verdicts_data: dict, subject: dict) -> str:
+    # Fail loud on malformed input rather than silently mis-rendering: the
+    # dossier's integrity claim depends on the data being well-formed.
+    contract.validate_verdicts(verdicts_data)
     name = subject.get("name", verdicts_data.get("subject_name", "Unknown"))
     grouped = verdicts_mod.by_bucket(verdicts_data)
     contentious = any(v.get("contentious") for v in verdicts_data.get("verdicts", []))
@@ -34,9 +49,8 @@ def render_dossier(verdicts_data: dict, subject: dict) -> str:
         lines += ["| Claim | Source | Quote |", "| --- | --- | --- |"]
         for v in verified:
             for s in v["supporting"]:
-                quote = s["quote"].replace("|", "\\|")
-                claim = v["claim_text"].replace("|", "\\|")
-                lines.append(f"| {claim} | {s['url']} | \"{quote}\" |")
+                lines.append(f"| {_cell(v['claim_text'])} | {_cell(s['url'])} "
+                             f"| \"{_cell(s['quote'])}\" |")
     else:
         lines.append("_No verified facts yet._")
     lines.append("")
