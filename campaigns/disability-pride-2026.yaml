@@ -1,0 +1,24 @@
+# Campaign: Disability Pride 2026
+# Swap this whole file to retarget a different demographic — zero code changes.
+name: disability-pride-2026
+description: Disabled activists/artists/scientists, Disability Pride Month (July)
+
+intake:
+  name_lists:
+    - "input/candidates.csv"          # names from orgs, event lists, books
+  # Optional Wikidata redlist query. This is the WHERE-clause BODY only; the tool
+  # wraps it into a full SELECT binding ?person / ?personLabel. The
+  # FILTER NOT EXISTS pattern mirrors WikiProject Women in Red's redlist bot.
+  sparql: |
+    ?person wdt:P31 wd:Q5 .                          # instance of human
+    ?person wdt:P1050 ?condition .                   # has a medical condition
+    FILTER NOT EXISTS {
+      ?enwiki schema:about ?person ;
+              schema:isPartOf <https://en.wikipedia.org/> .
+    }
+
+# Appended to coverage searches during notability triage (Stage 3).
+search_hints:
+  - "disability rights"
+  - "activist"
+  - "disabled"
