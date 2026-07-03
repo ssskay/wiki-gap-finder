@@ -16,6 +16,13 @@ _PROSE_NOTICE = (
 )
 
 
+# Tiers Wikipedia will accept as carrying a fact. Defense-in-depth: even if the
+# subagent hands us a VERIFIED verdict backed by a weaker source, Python refuses
+# to print it as a fact. The subagent owns the reliability *judgment*; this only
+# enforces the invariant the judgment is supposed to have upheld.
+_RELIABLE_TIERS = {"GENERALLY_RELIABLE", "MARGINAL"}
+
+
 def _cell(text: str) -> str:
     """Make a string safe to place inside a Markdown table cell.
 
@@ -45,15 +52,33 @@ def render_dossier(verdicts_data: dict, subject: dict) -> str:
     # VERIFIED
     lines += ["## Verified facts", ""]
     verified = grouped["VERIFIED"]
+    demoted: list[dict] = []  # marked VERIFIED but no reliable source backs it
     if verified:
         lines += ["| Claim | Source | Quote |", "| --- | --- | --- |"]
+        rows = 0
         for v in verified:
-            for s in v["supporting"]:
+            reliable = [s for s in v["supporting"] if s.get("rsp_tier") in _RELIABLE_TIERS]
+            if not reliable:
+                demoted.append(v)
+                continue
+            for s in reliable:
                 lines.append(f"| {_cell(v['claim_text'])} | {_cell(s['url'])} "
                              f"| \"{_cell(s['quote'])}\" |")
+                rows += 1
+        if rows == 0:
+            lines.append("| _(none — see flagged claims below)_ | | |")
     else:
         lines.append("_No verified facts yet._")
     lines.append("")
+
+    if demoted:
+        # Never silently drop a claim the subagent called VERIFIED — surface it
+        # loudly so it gets re-checked, not cited.
+        lines += ["> ⚠ **Flagged: marked VERIFIED but no generally-reliable source "
+                  "backs them.** Do not cite as-is — treat as leads:", ""]
+        for v in demoted:
+            lines.append(f"> - {_cell(v['claim_text'])}")
+        lines.append("")
 
     # LEAD
     lines += ["## Research leads — chase before writing", ""]

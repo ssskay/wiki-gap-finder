@@ -665,6 +665,10 @@ def build_dossier(campaign: "Campaign", session, name: str, backend=None) -> Non
     query = f"{name} {hint}".strip()
     log.info("dossier: no verdicts yet — gathering coverage for '%s'", name)
     coverage = search_mod.search_web(query, backend=backend)
+    if not coverage:
+        log.warning("coverage search returned 0 sources for '%s' — worklist will be "
+                    "empty. If using --search-backend firecrawl, confirm the 'firecrawl' "
+                    "CLI is installed and on PATH.", name)
     wl = worklist_mod.build_worklist(
         campaign=campaign.name,
         subject={"name": name},
@@ -703,7 +707,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     stage = p.add_mutually_exclusive_group(required=True)
     stage.add_argument("--check", action="store_true", help="Stages 1-2: intake + gap check")
     stage.add_argument("--triage", action="store_true", help="Stage 3: notability triage (WIP)")
-    stage.add_argument("--dossier", metavar="NAME", help="Stage 4: build dossier for one person (WIP)")
+    stage.add_argument("--dossier", metavar="NAME", help="Stage 4: build dossier for one person")
     stage.add_argument("--report", action="store_true", help="print summary table from saved state")
     p.add_argument("--no-sparql", action="store_true",
                    help="skip the Wikidata SPARQL intake (use only CSV/txt name lists)")

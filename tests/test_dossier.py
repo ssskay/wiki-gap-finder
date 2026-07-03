@@ -32,6 +32,20 @@ def test_by_bucket_raises_on_unknown_bucket():
         verdicts.by_bucket({"verdicts": [{"bucket": "MAYBE", "claim_text": "x"}]})
 
 
+def test_verified_backed_only_by_unreliable_source_is_not_printed_as_fact():
+    # Defense-in-depth: even if the subagent marks a claim VERIFIED but its only
+    # supporting source is user-generated, it must NOT appear as a verified fact.
+    data = _sample()
+    data["verdicts"][0]["supporting"][0]["rsp_tier"] = "USER_GENERATED"
+    md = dossier.render_dossier(data, subject={"name": "Corina Boettger"})
+    facts = md.split("## Research leads")[0]
+    # Not a fact row...
+    assert "| Voiced Paimon |" not in facts
+    # ...but surfaced loudly as a flagged claim, not silently dropped.
+    assert "Flagged" in md
+    assert "Voiced Paimon" in md
+
+
 def test_verified_claim_renders_in_facts_table_with_quote():
     md = dossier.render_dossier(_sample(), subject={"name": "Corina Boettger"})
     assert "## Verified facts" in md
