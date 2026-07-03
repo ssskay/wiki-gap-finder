@@ -141,6 +141,28 @@ class PoliteSession:
                 time.sleep(backoff)
         raise RuntimeError(f"request to {url} failed after {MAX_RETRIES} attempts: {last_err}")
 
+    def get_text(self, url: str, params: dict[str, Any]) -> str:
+        """GET a text/HTML endpoint with the same rate limiting and backoff."""
+        last_err: Exception | None = None
+        for attempt in range(1, MAX_RETRIES + 1):
+            self._throttle()
+            try:
+                log.debug("GET(text) %s params=%s (attempt %d)", url, params, attempt)
+                resp = self._session.get(url, params=params, timeout=30)
+                self._last_request_ts = time.monotonic()
+                if resp.status_code == 429 or resp.status_code >= 500:
+                    raise requests.HTTPError(f"HTTP {resp.status_code}")
+                resp.raise_for_status()
+                return resp.text
+            except requests.RequestException as exc:
+                last_err = exc
+                self._last_request_ts = time.monotonic()
+                backoff = BACKOFF_BASE ** attempt
+                log.warning("request failed (%s); backoff %.1fs then retry %d/%d",
+                            exc, backoff, attempt, MAX_RETRIES)
+                time.sleep(backoff)
+        raise RuntimeError(f"request to {url} failed after {MAX_RETRIES} attempts: {last_err}")
+
 
 # --------------------------------------------------------------------------- #
 # Campaign config
