@@ -20,3 +20,24 @@ def test_ddg_html_is_parsed_into_results():
 def test_search_result_roundtrips_to_dict():
     r = search.SearchResult(url="https://x.com", title="T", text="B")
     assert r.to_dict() == {"url": "https://x.com", "title": "T", "text": "B"}
+
+
+def test_firecrawl_missing_binary_degrades_to_empty():
+    def boom(*a, **k):
+        raise FileNotFoundError("firecrawl not on PATH")
+    backend = search.FirecrawlBackend(runner=boom)
+    assert backend.search("q", 5) == []
+
+
+def test_firecrawl_bad_json_degrades_to_empty():
+    class Proc:
+        returncode, stdout, stderr = 0, "not json{", ""
+    backend = search.FirecrawlBackend(runner=lambda *a, **k: Proc())
+    assert backend.search("q", 5) == []
+
+
+def test_firecrawl_unexpected_shape_degrades_to_empty():
+    class Proc:
+        returncode, stdout, stderr = 0, '{"data": {"not": "a list"}}', ""
+    backend = search.FirecrawlBackend(runner=lambda *a, **k: Proc())
+    assert backend.search("q", 5) == []

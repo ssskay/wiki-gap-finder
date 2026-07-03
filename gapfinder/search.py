@@ -72,16 +72,26 @@ class FirecrawlBackend(Backend):
         self._runner = runner
 
     def search(self, query: str, limit: int) -> list[SearchResult]:
-        proc = self._runner([self._binary, "search", query, "--json", "--limit", str(limit)],
-                            capture_output=True, text=True, timeout=120)
-        if proc.returncode != 0:
-            log.warning("firecrawl search failed: %s", proc.stderr.strip())
+        # Opt-in external process: any failure (missing binary, timeout, bad
+        # JSON, unexpected shape) degrades to [] rather than crashing the caller,
+        # matching the returncode!=0 branch. This is the fragile, isolated bit.
+        try:
+            proc = self._runner([self._binary, "search", query, "--json", "--limit", str(limit)],
+                                capture_output=True, text=True, timeout=120)
+            if proc.returncode != 0:
+                log.warning("firecrawl search failed: %s", proc.stderr.strip())
+                return []
+            payload = json.loads(proc.stdout or "[]")
+            rows = payload.get("data", payload) if isinstance(payload, dict) else payload
+            if not isinstance(rows, list):
+                log.warning("firecrawl returned unexpected shape: %s", type(rows).__name__)
+                return []
+            return [SearchResult(url=r.get("url", ""), title=r.get("title", ""),
+                                 text=r.get("markdown", r.get("content", "")))
+                    for r in rows if isinstance(r, dict)][:limit]
+        except (OSError, subprocess.SubprocessError, json.JSONDecodeError) as exc:
+            log.warning("firecrawl search errored: %s", exc)
             return []
-        payload = json.loads(proc.stdout or "[]")
-        rows = payload.get("data", payload) if isinstance(payload, dict) else payload
-        return [SearchResult(url=r.get("url", ""), title=r.get("title", ""),
-                             text=r.get("markdown", r.get("content", "")))
-                for r in rows][:limit]
 
 
 def search_web(query: str, backend: Backend, limit: int = 8) -> list[SearchResult]:
