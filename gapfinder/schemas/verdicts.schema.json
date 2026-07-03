@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["campaign", "subject_name", "verdicts", "summary"],
+  "properties": {
+    "campaign": {"type": "string"},
+    "subject_name": {"type": "string"},
+    "generated_by": {"type": "string"},
+    "summary": {
+      "type": "object",
+      "required": ["verified", "lead", "dead_end"],
+      "properties": {
+        "verified": {"type": "integer"},
+        "lead": {"type": "integer"},
+        "dead_end": {"type": "integer"}
+      }
+    },
+    "verdicts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["claim_id", "claim_text", "bucket", "supporting", "reasoning"],
+        "properties": {
+          "claim_id": {"type": "string"},
+          "claim_text": {"type": "string"},
+          "bucket": {"enum": ["VERIFIED", "LEAD", "DEAD_END"]},
+          "claim_type": {"type": "string"},
+          "contentious": {"type": "boolean"},
+          "supporting": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["url", "rsp_tier", "quote"],
+              "properties": {
+                "source_id": {"type": "string"},
+                "url": {"type": "string"},
+                "rsp_tier": {"$ref": "#/definitions/tier"},
+                "quote": {"type": "string", "minLength": 1}
+              }
+            }
+          },
+          "lead": {
+            "oneOf": [
+              {"type": "null"},
+              {
+                "type": "object",
+                "required": ["breadcrumb_source", "missing"],
+                "properties": {
+                  "breadcrumb_source": {"type": "object"},
+                  "partial_corroboration": {"type": "array"},
+                  "missing": {"type": "string"},
+                  "suggested_searches": {"type": "array", "items": {"type": "string"}}
+                }
+              }
+            ]
+          },
+          "reasoning": {"type": "string"},
+          "chase_log": {"type": "object"}
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"bucket": {"const": "VERIFIED"}}},
+            "then": {"properties": {"supporting": {"minItems": 1}}}
+          }
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "tier": {"enum": ["GENERALLY_RELIABLE", "MARGINAL", "GENERALLY_UNRELIABLE",
+                       "DEPRECATED", "USER_GENERATED", "UNRATED"]}
+  }
+}

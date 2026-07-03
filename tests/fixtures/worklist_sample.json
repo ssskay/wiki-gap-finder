@@ -1,0 +1,11 @@
+{
+  "campaign": "disability-pride-2026",
+  "subject": {"name": "Corina Boettger", "aliases": [], "wikidata_id": "Q1", "known_for_hint": "voice actor"},
+  "sources": [
+    {"source_id": "s1", "url": "https://ex.com/a", "domain": "ex.com", "title": "A",
+     "rsp_tier": "GENERALLY_RELIABLE", "rsp_note": "", "fetched_text": "text", "discovery": "coverage_search"}
+  ],
+  "seed_claims": [
+    {"claim_id": "c1", "text": "Won XYZ award", "from_source_id": "s1", "claim_type": "award", "contentious": false}
+  ]
+}

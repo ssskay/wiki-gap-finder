@@ -1,0 +1,23 @@
+{
+  "campaign": "disability-pride-2026",
+  "subject_name": "Corina Boettger",
+  "generated_by": "claude-source-vetter",
+  "verdicts": [
+    {"claim_id": "c2", "claim_text": "Voiced Paimon", "bucket": "VERIFIED", "claim_type": "role",
+     "contentious": false,
+     "supporting": [{"source_id": "s1", "url": "https://ex.com/a", "rsp_tier": "GENERALLY_RELIABLE",
+                     "quote": "Boettger voices Paimon."}],
+     "lead": null, "reasoning": "single reliable source",
+     "chase_log": {"searches_run": 0, "pages_fetched": 0, "capped": false}},
+    {"claim_id": "c1", "claim_text": "Won XYZ award", "bucket": "LEAD", "claim_type": "award",
+     "contentious": false, "supporting": [],
+     "lead": {"breadcrumb_source": {"url": "https://fandom.com/x", "rsp_tier": "USER_GENERATED"},
+              "partial_corroboration": [{"url": "https://news.com/y", "quote": "XYZ award went to production Y.",
+                                          "note": "does not name subject"}],
+              "missing": "a reliable source naming Corina Boettger with the XYZ award",
+              "suggested_searches": ["\"Corina Boettger\" XYZ award"]},
+     "reasoning": "no reliable source connects subject to award",
+     "chase_log": {"searches_run": 3, "pages_fetched": 2, "capped": false}}
+  ],
+  "summary": {"verified": 1, "lead": 1, "dead_end": 0}
+}

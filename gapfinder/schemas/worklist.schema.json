@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["campaign", "subject", "sources", "seed_claims"],
+  "properties": {
+    "campaign": {"type": "string"},
+    "subject": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {"type": "string"},
+        "aliases": {"type": "array", "items": {"type": "string"}},
+        "wikidata_id": {"type": ["string", "null"]},
+        "known_for_hint": {"type": "string"}
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source_id", "url", "domain", "rsp_tier"],
+        "properties": {
+          "source_id": {"type": "string"},
+          "url": {"type": "string"},
+          "domain": {"type": "string"},
+          "title": {"type": "string"},
+          "rsp_tier": {"$ref": "#/definitions/tier"},
+          "rsp_note": {"type": "string"},
+          "fetched_text": {"type": "string"},
+          "discovery": {"type": "string"}
+        }
+      }
+    },
+    "seed_claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["claim_id", "text"],
+        "properties": {
+          "claim_id": {"type": "string"},
+          "text": {"type": "string"},
+          "from_source_id": {"type": ["string", "null"]},
+          "claim_type": {"type": "string"},
+          "contentious": {"type": "boolean"}
+        }
+      }
+    }
+  },
+  "definitions": {
+    "tier": {"enum": ["GENERALLY_RELIABLE", "MARGINAL", "GENERALLY_UNRELIABLE",
+                       "DEPRECATED", "USER_GENERATED", "UNRATED"]}
+  }
+}
