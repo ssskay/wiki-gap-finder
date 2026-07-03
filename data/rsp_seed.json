@@ -1,0 +1,21 @@
+{
+  "nytimes.com": {"tier": "GENERALLY_RELIABLE", "note": "The New York Times"},
+  "bbc.com": {"tier": "GENERALLY_RELIABLE", "note": "BBC News"},
+  "bbc.co.uk": {"tier": "GENERALLY_RELIABLE", "note": "BBC News"},
+  "theguardian.com": {"tier": "GENERALLY_RELIABLE", "note": "The Guardian"},
+  "washingtonpost.com": {"tier": "GENERALLY_RELIABLE", "note": "The Washington Post"},
+  "reuters.com": {"tier": "GENERALLY_RELIABLE", "note": "Reuters"},
+  "apnews.com": {"tier": "GENERALLY_RELIABLE", "note": "Associated Press"},
+  "npr.org": {"tier": "GENERALLY_RELIABLE", "note": "NPR"},
+  "nature.com": {"tier": "GENERALLY_RELIABLE", "note": "Nature"},
+  "imdb.com": {"tier": "GENERALLY_UNRELIABLE", "note": "IMDb — user-editable, not reliable"},
+  "kickstarter.com": {"tier": "GENERALLY_UNRELIABLE", "note": "self-published crowdfunding"},
+  "dailymail.co.uk": {"tier": "DEPRECATED", "note": "Daily Mail — deprecated"},
+  "medium.com": {"tier": "GENERALLY_UNRELIABLE", "note": "self-published blog platform"},
+  "substack.com": {"tier": "GENERALLY_UNRELIABLE", "note": "self-published newsletter platform"},
+  "fandom.com": {"tier": "USER_GENERATED", "note": "Fandom/Wikia — user-generated wiki"},
+  "wikipedia.org": {"tier": "USER_GENERATED", "note": "Wikipedia is not a reliable source for itself"},
+  "reddit.com": {"tier": "USER_GENERATED", "note": "forum, user-generated"},
+  "youtube.com": {"tier": "MARGINAL", "note": "depends on uploader; often not independent"},
+  "linkedin.com": {"tier": "MARGINAL", "note": "self-published profile data"}
+}
