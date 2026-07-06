@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wiki-gap-finder"
+version = "2.0.0"
+description = "Campaign-driven pipeline that finds people missing from English Wikipedia, verifies every fact against real sources, and hands a human a research dossier — it never writes article prose."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "Sara Kay", email = "sara@sarakay.me" }]
+license = { text = "MIT" }
+keywords = ["wikipedia", "wikidata", "research", "notability", "gap-analysis"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "Topic :: Sociology :: History",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+]
+
+# Core runtime. Deliberately light: only what every run needs — HTTP to the
+# Wikipedia/Wikidata APIs (requests), campaign parsing (PyYAML), and worklist/
+# verdicts contract validation (jsonschema). Nothing heavy or optional lives
+# here; pretty output and the Firecrawl coverage backend are extras below.
+dependencies = [
+    "requests",
+    "PyYAML",
+    "jsonschema",
+]
+
+[project.optional-dependencies]
+# `pip install wiki-gap-finder[ui]` — Rich-rendered gap-check table. Absent, the
+# CLI falls back to a plain-text table (see gapfinder/cli.py:print_gap_table).
+ui = ["rich"]
+# `pip install wiki-gap-finder[chase]` — the Firecrawl coverage backend for
+# --dossier worklist building (--search-backend firecrawl). Absent, the default
+# keyless DDG backend is used and FirecrawlBackend degrades to empty coverage.
+chase = ["firecrawl-py"]
+
+[project.urls]
+Homepage = "https://github.com/ssskay/wiki-gap-finder"
+Repository = "https://github.com/ssskay/wiki-gap-finder"
+
+[project.scripts]
+gap-finder = "gapfinder.cli:main"
+
+[tool.setuptools]
+# The historical root module is kept as a thin backwards-compatible shim that
+# re-exports gapfinder.cli, so `import gap_finder` and `python gap_finder.py`
+# keep working.
+py-modules = ["gap_finder"]
+
+[tool.setuptools.packages.find]
+include = ["gapfinder*"]
+
+[tool.setuptools.package-data]
+# JSON schemas are loaded at runtime via Path(__file__).parent / "schemas".
+gapfinder = ["schemas/*.json"]
