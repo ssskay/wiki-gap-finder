@@ -4,3 +4,8 @@ output/
 data/rsp_cache.json
 .pytest_cache/
 .DS_Store
+
+# Packaging build artifacts
+build/
+dist/
+*.egg-info/
