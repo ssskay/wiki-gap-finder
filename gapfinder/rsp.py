@@ -1,8 +1,9 @@
 """Reliability tiering against Wikipedia's perennial-sources list (WP:RSP).
 
-Keyless. Uses a bundled curated seed (data/rsp_seed.json) as the authoritative
-map for common domains; unknown domains return UNRATED so the subagent judges
-them from first principles. refresh_from_wikipedia() is a best-effort augment.
+Keyless. Uses a bundled curated seed (gapfinder/data/rsp_seed.json — shipped
+inside the wheel) as the authoritative map for common domains; unknown domains
+return UNRATED so the subagent judges them from first principles.
+refresh_from_wikipedia() is a best-effort augment cached under ~/.cache.
 """
 from __future__ import annotations
 
@@ -13,8 +14,8 @@ from urllib.parse import urlparse
 
 log = logging.getLogger("gap_finder.rsp")
 
-_SEED_PATH = Path(__file__).resolve().parent.parent / "data" / "rsp_seed.json"
-_CACHE_PATH = Path(__file__).resolve().parent.parent / "data" / "rsp_cache.json"
+_SEED_PATH = Path(__file__).resolve().parent / "data" / "rsp_seed.json"
+_CACHE_PATH = Path.home() / ".cache" / "wiki-gap-finder" / "rsp_cache.json"
 
 UNRATED = ("UNRATED", "")
 
@@ -23,6 +24,9 @@ def _load_map() -> dict[str, dict]:
     data: dict[str, dict] = {}
     if _SEED_PATH.exists():
         data.update(json.loads(_SEED_PATH.read_text()))
+    else:
+        log.warning("rsp: bundled seed missing at %s — every domain will tier as "
+                    "UNRATED (broken install?)", _SEED_PATH)
     if _CACHE_PATH.exists():  # refreshed entries override/extend the seed
         data.update(json.loads(_CACHE_PATH.read_text()))
     return data
@@ -69,6 +73,7 @@ def refresh_from_wikipedia(session) -> int:
         if parsed:
             merged = json.loads(_CACHE_PATH.read_text()) if _CACHE_PATH.exists() else {}
             merged.update(parsed)
+            _CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
             _CACHE_PATH.write_text(json.dumps(merged, indent=2, ensure_ascii=False))
             log.info("rsp: cached %d parsed entries", len(parsed))
         return len(parsed)

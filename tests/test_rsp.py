@@ -1,3 +1,6 @@
+from pathlib import Path
+
+import gapfinder
 from gapfinder import rsp
 
 
@@ -19,3 +22,18 @@ def test_unknown_domain_is_unrated():
 
 def test_tier_for_url_extracts_domain():
     assert rsp.tier_for_url("https://www.imdb.com/name/nm123/")[0] == "GENERALLY_UNRELIABLE"
+
+
+def test_seed_ships_inside_the_package():
+    # The seed must live under gapfinder/ so wheels carry it — at the old
+    # repo-root data/ location, every pip install tiered everything UNRATED.
+    pkg = Path(gapfinder.__file__).resolve().parent
+    assert rsp._SEED_PATH.is_relative_to(pkg)
+    assert rsp._SEED_PATH.exists()
+
+
+def test_cache_is_not_written_into_the_install():
+    # Refresh cache goes to a user dir, never into site-packages (read-only
+    # in many installs) or the repo checkout.
+    repo_or_site = Path(gapfinder.__file__).resolve().parent.parent
+    assert not rsp._CACHE_PATH.is_relative_to(repo_or_site)
