@@ -203,7 +203,13 @@ class Campaign:
         p = Path(path)
         if not p.exists():
             sys.exit(f"Campaign file not found: {p}")
-        data = yaml.safe_load(p.read_text()) or {}
+        try:
+            data = yaml.safe_load(p.read_text()) or {}
+        except yaml.YAMLError as exc:
+            sys.exit(f"Invalid campaign YAML in {p}:\n{exc}")
+        if not isinstance(data, dict):
+            sys.exit(f"Invalid campaign YAML in {p}: expected a mapping of campaign "
+                     f"fields (name, intake, ...), got a {type(data).__name__}")
         intake = data.get("intake", {}) or {}
         camp = cls(
             name=data.get("name") or p.stem,
@@ -246,26 +252,22 @@ def read_name_list(path: Path) -> list[str]:
         with path.open(newline="", encoding="utf-8") as fh:
             sample = fh.read(2048)
             fh.seek(0)
-            has_header = csv.Sniffer().has_header(sample) if sample.strip() else False
-            if has_header:
-                reader = csv.DictReader(fh)
-                # pick the 'name' column, case-insensitive, else first field
-                name_key = None
-                for fn in reader.fieldnames or []:
-                    if fn and fn.strip().lower() == "name":
-                        name_key = fn
-                        break
-                if name_key is None and reader.fieldnames:
-                    name_key = reader.fieldnames[0]
-                for row in reader:
-                    val = (row.get(name_key) or "").strip()
-                    if val:
-                        names.append(val)
-            else:
-                fh.seek(0)
-                for row in csv.reader(fh):
-                    if row and row[0].strip():
-                        names.append(row[0].strip())
+            rows = [r for r in csv.reader(fh) if r and any(c.strip() for c in r)]
+        if not rows:
+            log.info("intake: read 0 names from %s", path)
+            return names
+        header = [c.strip().lower() for c in rows[0]]
+        if "name" in header:
+            col, body = header.index("name"), rows[1:]
+        elif len(header) > 1 and csv.Sniffer().has_header(sample):
+            col, body = 0, rows[1:]
+        else:
+            # Single-column files are always data: the sniffer guesses wrong on
+            # bare name lists and would silently eat the first name as a header.
+            col, body = 0, rows
+        for row in body:
+            if len(row) > col and row[col].strip():
+                names.append(row[col].strip())
     else:
         for line in path.read_text(encoding="utf-8").splitlines():
             line = line.strip()
@@ -716,9 +718,10 @@ def build_dossier(campaign: "Campaign", session, name: str, backend=None) -> Non
     log.info("dossier: no verdicts yet — gathering coverage for '%s'", name)
     coverage = search_mod.search_web(query, backend=backend)
     if not coverage:
-        log.warning("coverage search returned 0 sources for '%s' — worklist will be "
-                    "empty. If using --search-backend firecrawl, confirm the 'firecrawl' "
-                    "CLI is installed and on PATH.", name)
+        log.warning("coverage search returned 0 sources for '%s' via %s — the worklist "
+                    "will be empty and the vetter will have nothing to check. See the "
+                    "backend warning above for the likely cause.",
+                    name, type(backend).__name__)
     wl = worklist_mod.build_worklist(
         campaign=campaign.name,
         subject={"name": name},
@@ -787,33 +790,40 @@ def main(argv: list[str] | None = None) -> int:
     campaign = Campaign.load(args.campaign)
     session = PoliteSession()
 
-    if args.check:
-        names = collect_intake(campaign, session,
-                               use_sparql=not args.no_sparql, limit=args.limit)
-        if not names:
-            log.error("No candidate names collected — check the campaign's name_lists / sparql.")
-            return 1
-        results = run_gap_check(campaign, session, names)
-        save_gap_state(campaign, results)
-        print_gap_table(results)
-        return 0
-
-    if args.report:
-        run_report(campaign)
-        return 0
-
-    if args.triage:
-        run_triage(campaign, session)
-        return 0
-
-    if args.dossier:
+    try:
         if args.refresh_rsp:
             from gapfinder import rsp as rsp_mod
             rsp_mod.refresh_from_wikipedia(session)
-        backend = (search_mod.FirecrawlBackend() if args.search_backend == "firecrawl"
-                   else search_mod.DDGBackend(session))
-        build_dossier(campaign, session, args.dossier, backend=backend)
-        return 0
+
+        if args.check:
+            names = collect_intake(campaign, session,
+                                   use_sparql=not args.no_sparql, limit=args.limit)
+            if not names:
+                log.error("No candidate names collected — check the campaign's name_lists / sparql.")
+                return 1
+            results = run_gap_check(campaign, session, names)
+            save_gap_state(campaign, results)
+            print_gap_table(results)
+            return 0
+
+        if args.report:
+            run_report(campaign)
+            return 0
+
+        if args.triage:
+            run_triage(campaign, session)
+            return 0
+
+        if args.dossier:
+            backend = (search_mod.FirecrawlBackend() if args.search_backend == "firecrawl"
+                       else search_mod.DDGBackend(session))
+            build_dossier(campaign, session, args.dossier, backend=backend)
+            return 0
+    except (RuntimeError, requests.RequestException) as exc:
+        # Persistent network/API failure after PoliteSession's retries: a
+        # first-time user gets one clear line, not a traceback.
+        log.error("Giving up: %s — check your network connection and retry.", exc)
+        return 1
 
     return 0
 
