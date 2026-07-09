@@ -1,0 +1,24 @@
+<svg viewBox="0 0 700 190" width="700" height="190" xmlns="http://www.w3.org/2000/svg" role="img" font-family="ui-sans-serif,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif">
+<title>How the Wikipedia gap finder works</title>
+<desc>Four steps: start with names; find who is missing and check every fact (the AI's job); then a human writes every sentence.</desc>
+<defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#888780"/></marker></defs>
+<rect x="10" y="40" width="140" height="64" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="1"/>
+<text x="80.0" y="66" text-anchor="middle" font-size="13.5" font-weight="600" fill="#444441">Start with names</text>
+<text x="80.0" y="85" text-anchor="middle" font-size="11.5" fill="#5F5E5A">orgs, books, event lists</text>
+<rect x="190" y="40" width="140" height="64" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+<text x="260.0" y="66" text-anchor="middle" font-size="13.5" font-weight="600" fill="#3C3489">Find who&#8217;s missing</text>
+<text x="260.0" y="85" text-anchor="middle" font-size="11.5" fill="#534AB7">no Wikipedia article yet</text>
+<rect x="370" y="40" width="140" height="64" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+<text x="440.0" y="66" text-anchor="middle" font-size="13.5" font-weight="600" fill="#3C3489">Check every fact</text>
+<text x="440.0" y="85" text-anchor="middle" font-size="11.5" fill="#534AB7">real sources, exact quotes</text>
+<rect x="550" y="40" width="140" height="64" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+<text x="620.0" y="66" text-anchor="middle" font-size="13.5" font-weight="600" fill="#085041">A human writes</text>
+<text x="620.0" y="85" text-anchor="middle" font-size="11.5" fill="#0F6E56">every single sentence</text>
+<line x1="152" y1="72" x2="186" y2="72" stroke="#888780" stroke-width="1.5" marker-end="url(#ar)"/>
+<line x1="332" y1="72" x2="366" y2="72" stroke="#888780" stroke-width="1.5" marker-end="url(#ar)"/>
+<line x1="512" y1="72" x2="546" y2="72" stroke="#888780" stroke-width="1.5" marker-end="url(#ar)"/>
+<rect x="196" y="132" width="12" height="12" rx="3" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+<text x="216" y="142" text-anchor="start" font-size="12" fill="#5F5E5A">the AI&#8217;s job: detective work</text>
+<rect x="398" y="132" width="12" height="12" rx="3" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+<text x="418" y="142" text-anchor="start" font-size="12" fill="#5F5E5A">the human&#8217;s job: the writing</text>
+</svg>

@@ -1,0 +1,29 @@
+<svg viewBox="0 0 700 250" width="700" height="250" xmlns="http://www.w3.org/2000/svg" role="img" font-family="ui-sans-serif,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif">
+<title>The source vetter: two processes, one JSON boundary</title>
+<desc>The Python CLI writes a worklist JSON; the Claude vet-sources subagent reads it and writes verdicts JSON; the CLI then renders the dossier a human writes from.</desc>
+<defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#888780"/></marker></defs>
+<rect x="10" y="30" width="200" height="60" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+<text x="110.0" y="56" text-anchor="middle" font-size="13.5" font-weight="600" fill="#3C3489" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">gap_finder --dossier</text>
+<text x="110.0" y="75" text-anchor="middle" font-size="11.5" fill="#534AB7">gathers coverage, tiers sources</text>
+<line x1="214" y1="60" x2="246" y2="60" stroke="#888780" stroke-width="1.5" marker-end="url(#ar)"/>
+<rect x="250" y="30" width="200" height="60" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="1"/>
+<text x="350.0" y="56" text-anchor="middle" font-size="13.5" font-weight="600" fill="#444441" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">vetting_worklist.json</text>
+<text x="350.0" y="75" text-anchor="middle" font-size="11.5" fill="#5F5E5A">sources + claims to check</text>
+<line x1="454" y1="60" x2="486" y2="60" stroke="#888780" stroke-width="1.5" marker-end="url(#ar)"/>
+<rect x="490" y="30" width="200" height="60" rx="6" fill="#FAECE7" stroke="#993C1D" stroke-width="1"/>
+<text x="590.0" y="56" text-anchor="middle" font-size="13.5" font-weight="600" fill="#712B13">vet-sources subagent</text>
+<text x="590.0" y="75" text-anchor="middle" font-size="11.5" fill="#993C1D">classifies, chases, never stitches</text>
+<line x1="590" y1="94" x2="590" y2="136" stroke="#888780" stroke-width="1.5" marker-end="url(#ar)"/>
+<rect x="490" y="140" width="200" height="60" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="1"/>
+<text x="590.0" y="166" text-anchor="middle" font-size="13.5" font-weight="600" fill="#444441" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">vetting_verdicts.json</text>
+<text x="590.0" y="185" text-anchor="middle" font-size="11.5" fill="#5F5E5A">VERIFIED / LEAD / DEAD_END</text>
+<line x1="486" y1="170" x2="454" y2="170" stroke="#888780" stroke-width="1.5" marker-end="url(#ar)"/>
+<rect x="250" y="140" width="200" height="60" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+<text x="350.0" y="166" text-anchor="middle" font-size="13.5" font-weight="600" fill="#3C3489" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">gap_finder --dossier</text>
+<text x="350.0" y="185" text-anchor="middle" font-size="11.5" fill="#534AB7">renders, enforces reliability</text>
+<line x1="246" y1="170" x2="214" y2="170" stroke="#888780" stroke-width="1.5" marker-end="url(#ar)"/>
+<rect x="10" y="140" width="200" height="60" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+<text x="110.0" y="166" text-anchor="middle" font-size="13.5" font-weight="600" fill="#085041" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">dossier.md</text>
+<text x="110.0" y="185" text-anchor="middle" font-size="11.5" fill="#0F6E56">a human writes from this</text>
+<text x="350" y="232" text-anchor="middle" font-size="11.5" fill="#5F5E5A">each side is testable alone &#8212; the JSON files are the whole contract</text>
+</svg>

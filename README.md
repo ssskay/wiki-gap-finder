@@ -10,6 +10,11 @@ sources, and hands a human a research dossier they write the article from.
 > limitation to route around; it's the product's integrity claim: *AI found her and
 > checked the facts; a human wrote her story.*
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/ssskay/wiki-gap-finder/main/docs/images/pipeline-dark.svg">
+  <img alt="Four steps: start with names (orgs, books, event lists); find who's missing (no Wikipedia article yet); check every fact (real sources, exact quotes); a human writes every single sentence. The first three are the AI's detective work, the last is the human's." src="https://raw.githubusercontent.com/ssskay/wiki-gap-finder/main/docs/images/pipeline-light.svg">
+</picture>
+
 ## Pipeline
 
 1. **Intake** — names from CSV/txt lists and/or an optional Wikidata SPARQL redlist query.
@@ -26,11 +31,10 @@ sources, and hands a human a research dossier they write the article from.
 The vetter is two processes across a two-file JSON boundary, so each side is testable
 in isolation:
 
-```
-gap_finder.py --dossier  →  vetting_worklist.json  →  Claude vet-sources subagent
-                                                            │
-dossier.md  ←  gap_finder.py --dossier  ←  vetting_verdicts.json
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/ssskay/wiki-gap-finder/main/docs/images/vetter-loop-dark.svg">
+  <img alt="gap_finder --dossier gathers coverage and writes vetting_worklist.json; the Claude vet-sources subagent classifies and chases, writing vetting_verdicts.json (VERIFIED / LEAD / DEAD_END); gap_finder --dossier then renders dossier.md, which a human writes from. The JSON files are the whole contract." src="https://raw.githubusercontent.com/ssskay/wiki-gap-finder/main/docs/images/vetter-loop-light.svg">
+</picture>
 
 - **Python** (keyless): gathers coverage, tiers each source against Wikipedia's
   perennial-sources list (WP:RSP), and renders the dossier.
@@ -47,6 +51,11 @@ dossier.md  ←  gap_finder.py --dossier  ←  vetting_verdicts.json
 combining a subject-naming unreliable source with a fact-confirming reliable source. Two
 half-sources stay a LEAD. And the renderer structurally refuses to print any fact backed
 only by an unreliable source — even if a verdicts file claims otherwise.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/ssskay/wiki-gap-finder/main/docs/images/never-stitch-dark.svg">
+  <img alt="A fan wiki that names her plus a news story that proves the fact but not her is still not a fact — it stays a research lead. Only one reliable source that names her and states the fact becomes a verified fact, quoted in the dossier." src="https://raw.githubusercontent.com/ssskay/wiki-gap-finder/main/docs/images/never-stitch-light.svg">
+</picture>
 
 ## Install
 

@@ -1,0 +1,25 @@
+<svg viewBox="0 0 700 235" width="700" height="235" xmlns="http://www.w3.org/2000/svg" role="img" font-family="ui-sans-serif,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif">
+<title>The never-stitch rule</title>
+<desc>Two half-sources, one naming her unreliably and one proving the fact without naming her, stay a research lead. Only one reliable source that names her and states the fact becomes a verified fact.</desc>
+<defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#888780"/></marker></defs>
+<text x="10" y="22" text-anchor="start" font-size="12" fill="#B4B2A9">Two half-sources, stitched together:</text>
+<rect x="10" y="34" width="195" height="60" rx="6" fill="#633806" stroke="#EF9F27" stroke-width="1"/>
+<text x="107.5" y="60" text-anchor="middle" font-size="13.5" font-weight="600" fill="#FAC775">A fan wiki names her</text>
+<text x="107.5" y="79" text-anchor="middle" font-size="11.5" fill="#EF9F27">but it&#8217;s unreliable</text>
+<text x="222" y="70" text-anchor="middle" font-size="16" fill="#B4B2A9">+</text>
+<rect x="240" y="34" width="195" height="60" rx="6" fill="#633806" stroke="#EF9F27" stroke-width="1"/>
+<text x="337.5" y="60" text-anchor="middle" font-size="13.5" font-weight="600" fill="#FAC775">A news story</text>
+<text x="337.5" y="79" text-anchor="middle" font-size="11.5" fill="#EF9F27">proves the fact, not her</text>
+<line x1="441" y1="64" x2="494" y2="64" stroke="#888780" stroke-width="1.5" marker-end="url(#ar)"/>
+<rect x="500" y="34" width="190" height="60" rx="6" fill="#791F1F" stroke="#F09595" stroke-width="1"/>
+<text x="595.0" y="60" text-anchor="middle" font-size="13.5" font-weight="600" fill="#F7C1C1">Still not a fact</text>
+<text x="595.0" y="79" text-anchor="middle" font-size="11.5" fill="#F09595">stays a research lead</text>
+<text x="10" y="142" text-anchor="start" font-size="12" fill="#B4B2A9">One whole source:</text>
+<rect x="10" y="154" width="425" height="60" rx="6" fill="#085041" stroke="#5DCAA5" stroke-width="1"/>
+<text x="222.5" y="180" text-anchor="middle" font-size="13.5" font-weight="600" fill="#9FE1CB">One reliable source</text>
+<text x="222.5" y="199" text-anchor="middle" font-size="11.5" fill="#5DCAA5">names her and states the fact</text>
+<line x1="441" y1="184" x2="494" y2="184" stroke="#888780" stroke-width="1.5" marker-end="url(#ar)"/>
+<rect x="500" y="154" width="190" height="60" rx="6" fill="#27500A" stroke="#97C459" stroke-width="1"/>
+<text x="595.0" y="180" text-anchor="middle" font-size="13.5" font-weight="600" fill="#C0DD97">Verified fact</text>
+<text x="595.0" y="199" text-anchor="middle" font-size="11.5" fill="#97C459">quoted in the dossier</text>
+</svg>
