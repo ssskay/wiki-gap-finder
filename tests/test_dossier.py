@@ -63,6 +63,26 @@ def test_lead_renders_in_research_leads_not_table():
     assert "a reliable source naming Corina Boettger with the XYZ award" in md
 
 
+def test_contentious_claim_needs_generally_reliable_not_marginal():
+    # The BLP banner promises contentious facts carry a generally-reliable
+    # source or are dropped — so MARGINAL must not be enough when contentious.
+    data = _sample()
+    data["verdicts"][0]["contentious"] = True
+    data["verdicts"][0]["supporting"][0]["rsp_tier"] = "MARGINAL"
+    md = dossier.render_dossier(data, subject={"name": "Corina Boettger"})
+    facts = md.split("## Research leads")[0]
+    assert "| Voiced Paimon |" not in facts
+    assert "Flagged" in md  # surfaced for re-checking, not silently dropped
+
+
+def test_non_contentious_marginal_claim_still_renders_as_fact():
+    data = _sample()
+    data["verdicts"][0]["supporting"][0]["rsp_tier"] = "MARGINAL"
+    md = dossier.render_dossier(data, subject={"name": "Corina Boettger"})
+    facts = md.split("## Research leads")[0]
+    assert "| Voiced Paimon |" in facts
+
+
 def test_blp_banner_present_when_any_contentious(tmp_path):
     data = _sample()
     data["verdicts"][0]["contentious"] = True

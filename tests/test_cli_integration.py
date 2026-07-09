@@ -1,5 +1,8 @@
 import json
 from pathlib import Path
+
+import pytest
+
 import gap_finder
 from gapfinder import worklist as worklist_mod
 from tests.conftest import FIXTURES
@@ -36,3 +39,59 @@ def test_dossier_emits_worklist_when_no_verdicts(tmp_path, monkeypatch):
     assert wl.exists()
     data = json.loads(wl.read_text())
     assert data["subject"]["name"] == "Corina Boettger"
+
+
+def test_headerless_single_column_csv_keeps_first_name(tmp_path):
+    # The most obvious input a stranger will try: a bare list of names. The CSV
+    # sniffer used to misread the first name as a header row and drop it.
+    p = tmp_path / "names.csv"
+    p.write_text("Ada Lovelace\nGrace Hopper\n")
+    assert gap_finder.read_name_list(p) == ["Ada Lovelace", "Grace Hopper"]
+
+
+def test_csv_with_name_header_still_skips_the_header(tmp_path):
+    p = tmp_path / "names.csv"
+    p.write_text("name,source\nAda Lovelace,seed\n")
+    assert gap_finder.read_name_list(p) == ["Ada Lovelace"]
+
+
+def test_malformed_campaign_yaml_exits_with_message(tmp_path):
+    bad = tmp_path / "bad.yaml"
+    bad.write_text("name: [unclosed\nintake: {")
+    with pytest.raises(SystemExit) as excinfo:
+        gap_finder.Campaign.load(bad)
+    assert "campaign" in str(excinfo.value).lower()
+
+
+def test_wrong_shape_campaign_yaml_exits_with_message(tmp_path):
+    bad = tmp_path / "list.yaml"
+    bad.write_text("- not\n- a\n- mapping\n")
+    with pytest.raises(SystemExit) as excinfo:
+        gap_finder.Campaign.load(bad)
+    assert "campaign" in str(excinfo.value).lower()
+
+
+def test_network_failure_is_a_friendly_error_not_a_traceback(tmp_path, monkeypatch):
+    camp_yaml = tmp_path / "c.yaml"
+    camp_yaml.write_text("name: t\n")
+    from gapfinder import cli
+    def boom(*a, **k):
+        raise RuntimeError("GET failed after 4 attempts: HTTP 500")
+    monkeypatch.setattr(cli, "collect_intake", boom)
+    rc = cli.main(["--campaign", str(camp_yaml), "--check", "--no-sparql"])
+    assert rc == 1  # clean exit code, no exception propagated
+
+
+def test_refresh_rsp_runs_for_stages_other_than_dossier(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    camp_yaml = tmp_path / "c.yaml"
+    camp_yaml.write_text("name: t\n")
+    state_dir = tmp_path / "output" / "t"
+    state_dir.mkdir(parents=True)
+    (state_dir / "gap_check.json").write_text('{"results": []}')
+    from gapfinder import cli, rsp
+    called = []
+    monkeypatch.setattr(rsp, "refresh_from_wikipedia", lambda session: called.append(1) or 0)
+    rc = cli.main(["--campaign", str(camp_yaml), "--report", "--refresh-rsp"])
+    assert rc == 0
+    assert called, "--refresh-rsp was ignored outside --dossier"

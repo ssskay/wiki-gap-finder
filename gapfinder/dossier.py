@@ -21,6 +21,9 @@ _PROSE_NOTICE = (
 # to print it as a fact. The subagent owns the reliability *judgment*; this only
 # enforces the invariant the judgment is supposed to have upheld.
 _RELIABLE_TIERS = {"GENERALLY_RELIABLE", "MARGINAL"}
+# Contentious claims about living people carry the BLP promise printed at the
+# top of the dossier: generally-reliable or dropped — MARGINAL is not enough.
+_CONTENTIOUS_TIERS = {"GENERALLY_RELIABLE"}
 
 
 def _cell(text: str) -> str:
@@ -57,7 +60,8 @@ def render_dossier(verdicts_data: dict, subject: dict) -> str:
         lines += ["| Claim | Source | Quote |", "| --- | --- | --- |"]
         rows = 0
         for v in verified:
-            reliable = [s for s in v["supporting"] if s.get("rsp_tier") in _RELIABLE_TIERS]
+            accepted = _CONTENTIOUS_TIERS if v.get("contentious") else _RELIABLE_TIERS
+            reliable = [s for s in v["supporting"] if s.get("rsp_tier") in accepted]
             if not reliable:
                 demoted.append(v)
                 continue

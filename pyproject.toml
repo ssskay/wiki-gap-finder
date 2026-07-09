@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wiki-gap-finder"
-version = "2.0.0"
+version = "2.0.1"
 description = "Campaign-driven pipeline that finds people missing from English Wikipedia, verifies every fact against real sources, and hands a human a research dossier — it never writes article prose."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -55,5 +55,6 @@ py-modules = ["gap_finder"]
 include = ["gapfinder*"]
 
 [tool.setuptools.package-data]
-# JSON schemas are loaded at runtime via Path(__file__).parent / "schemas".
-gapfinder = ["schemas/*.json"]
+# JSON schemas and the WP:RSP seed are loaded at runtime relative to
+# Path(__file__), so both must ship inside the wheel.
+gapfinder = ["schemas/*.json", "data/*.json"]
