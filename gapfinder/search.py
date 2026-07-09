@@ -12,6 +12,7 @@ import re
 import subprocess
 from dataclasses import dataclass
 from html import unescape
+from urllib.parse import parse_qs, urlparse
 
 log = logging.getLogger("gap_finder.search")
 
@@ -51,17 +52,35 @@ class DDGBackend(Backend):
     def __init__(self, session):
         self._session = session  # a gap_finder.PoliteSession
 
+    @staticmethod
+    def _resolve_redirect(href: str) -> str:
+        """DDG anchors are //duckduckgo.com/l/?uddg=<encoded-target> redirects.
+        Decode to the real URL — otherwise every source tiers as duckduckgo.com."""
+        href = unescape(href)
+        parsed = urlparse(href, scheme="https")
+        if parsed.netloc.endswith("duckduckgo.com") and parsed.path.startswith("/l/"):
+            target = parse_qs(parsed.query).get("uddg", [""])[0]
+            if target:
+                return target
+        return href
+
     @classmethod
     def _parse(cls, html: str) -> list[SearchResult]:
         out: list[SearchResult] = []
         for url, title_html in cls._LINK_RE.findall(html):
             title = unescape(re.sub(r"<[^>]+>", "", title_html)).strip()
-            out.append(SearchResult(url=url, title=title))
+            out.append(SearchResult(url=cls._resolve_redirect(url), title=title))
         return out
 
     def search(self, query: str, limit: int) -> list[SearchResult]:
         html = self._session.get_text(self.ENDPOINT, {"q": query})
-        return self._parse(html)[:limit]
+        results = self._parse(html)[:limit]
+        if not results:
+            log.warning("DDG returned no parseable results — DuckDuckGo often serves a "
+                        "bot-challenge page to non-browser clients, so keyless search may "
+                        "be blocked from this network. Try --search-backend firecrawl "
+                        "(needs the firecrawl CLI on PATH).")
+        return results
 
 
 class FirecrawlBackend(Backend):
@@ -83,11 +102,14 @@ class FirecrawlBackend(Backend):
                 return []
             payload = json.loads(proc.stdout or "[]")
             rows = payload.get("data", payload) if isinstance(payload, dict) else payload
+            if isinstance(rows, dict):
+                # Current firecrawl CLI wraps results as {"data": {"web": [...]}}.
+                rows = rows.get("web", [])
             if not isinstance(rows, list):
                 log.warning("firecrawl returned unexpected shape: %s", type(rows).__name__)
                 return []
             return [SearchResult(url=r.get("url", ""), title=r.get("title", ""),
-                                 text=r.get("markdown", r.get("content", "")))
+                                 text=r.get("markdown", r.get("content", r.get("description", ""))))
                     for r in rows if isinstance(r, dict)][:limit]
         except (OSError, subprocess.SubprocessError, json.JSONDecodeError) as exc:
             log.warning("firecrawl search errored: %s", exc)
