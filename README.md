@@ -48,33 +48,70 @@ combining a subject-naming unreliable source with a fact-confirming reliable sou
 half-sources stay a LEAD. And the renderer structurally refuses to print any fact backed
 only by an unreliable source — even if a verdicts file claims otherwise.
 
-## Usage
+## Install
 
 ```bash
-python3 gap_finder.py --campaign campaigns/<campaign>.yaml --check       # stages 1–2
-python3 gap_finder.py --campaign campaigns/<campaign>.yaml --check --no-sparql --limit 5
-python3 gap_finder.py --campaign campaigns/<campaign>.yaml --report      # table from saved state
-python3 gap_finder.py --campaign campaigns/<campaign>.yaml --dossier "Name Here"
+pip install wiki-gap-finder            # installs the `gap-finder` command
+pip install "wiki-gap-finder[ui]"      # + Rich-rendered tables
+pip install "wiki-gap-finder[chase]"   # + the Firecrawl coverage backend
 ```
 
-Swapping demographics is a new YAML in `campaigns/` — zero code changes. Results are
-written under `output/<campaign>/` (JSON state + markdown), so runs are resumable.
+Or clone this repo and run `python3 gap_finder.py ...` directly — same CLI
+(`pip3 install requests PyYAML jsonschema --break-system-packages`).
+
+## Usage
+
+Commands read and write paths relative to the current directory, so run them
+from your project root (campaign paths like `input/candidates.csv` resolve
+from there, and results land in `output/<campaign>/`).
+
+```bash
+gap-finder --campaign campaigns/<campaign>.yaml --check       # stages 1–2
+gap-finder --campaign campaigns/<campaign>.yaml --check --no-sparql --limit 5
+gap-finder --campaign campaigns/<campaign>.yaml --report      # table from saved state
+gap-finder --campaign campaigns/<campaign>.yaml --dossier "Name Here"
+gap-finder --campaign ... --dossier "Name" --search-backend firecrawl
+```
+
+A campaign is one small YAML — swapping demographics is a new file, zero code
+changes. Minimal example:
+
+```yaml
+name: my-campaign
+description: Who this campaign is about
+intake:
+  name_lists:
+    - "input/candidates.csv"   # CSV with a `name` column, or one name per line
+  # optional: a Wikidata SPARQL WHERE-clause body for redlist intake
+search_hints:                  # appended to coverage searches
+  - "activist"
+```
+
+Other flags: `--refresh-rsp` re-fetches the WP:RSP reliability cache (stored
+under `~/.cache/wiki-gap-finder/`), `-v` logs every request.
+
+**Heads-up on the keyless search default:** DuckDuckGo increasingly serves a
+bot challenge to non-browser clients. If coverage search comes back empty, the
+tool now says so loudly — use `--search-backend firecrawl` (with the
+`firecrawl` CLI installed) for dependable coverage gathering.
 
 ## Conventions
 
 Zero API keys on the default path (MediaWiki + Wikidata + DuckDuckGo are keyless;
-Firecrawl is opt-in). `python3` + `--break-system-packages`, no venvs. Polite
-`User-Agent`, ≥1s between requests with exponential backoff.
+Firecrawl is opt-in). Polite `User-Agent`, ≥1s between requests with exponential
+backoff.
 
 ```bash
-pip3 install requests PyYAML jsonschema --break-system-packages
-python3 -m pytest      # 31 tests
+python3 -m pytest      # 44 tests
 ```
 
 ## Layout
 
-- `gap_finder.py` — CLI; intake + gap check (stages 1–2) and dossier wiring (stage 4)
-- `gapfinder/` — the source-vetter package (contract, rsp, search, worklist, verdicts, dossier)
+- `gap_finder.py` — back-compat shim; the CLI lives in `gapfinder/cli.py`
+- `gapfinder/` — the package (cli, contract, rsp, search, worklist, verdicts, dossier)
+- `gapfinder/data/rsp_seed.json` — curated WP:RSP reliability seed (ships in the wheel)
 - `skills/vet-sources/SKILL.md` — the Claude subagent contract
 - `campaigns/` — one YAML per campaign
 - `docs/superpowers/` — design spec and implementation plan
+
+MIT licensed.
