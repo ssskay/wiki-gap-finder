@@ -82,16 +82,12 @@ def test_network_failure_is_a_friendly_error_not_a_traceback(tmp_path, monkeypat
     assert rc == 1  # clean exit code, no exception propagated
 
 
-def test_refresh_rsp_runs_for_stages_other_than_dossier(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
+def test_refresh_rsp_flag_is_gone(tmp_path):
+    # --refresh-rsp was a documented no-op (the wikitext parser was a stub);
+    # it was removed rather than shipped as a stub. argparse must reject it.
     camp_yaml = tmp_path / "c.yaml"
     camp_yaml.write_text("name: t\n")
-    state_dir = tmp_path / "output" / "t"
-    state_dir.mkdir(parents=True)
-    (state_dir / "gap_check.json").write_text('{"results": []}')
     from gapfinder import cli, rsp
-    called = []
-    monkeypatch.setattr(rsp, "refresh_from_wikipedia", lambda session: called.append(1) or 0)
-    rc = cli.main(["--campaign", str(camp_yaml), "--report", "--refresh-rsp"])
-    assert rc == 0
-    assert called, "--refresh-rsp was ignored outside --dossier"
+    assert not hasattr(rsp, "refresh_from_wikipedia")
+    with pytest.raises(SystemExit):
+        cli.main(["--campaign", str(camp_yaml), "--report", "--refresh-rsp"])

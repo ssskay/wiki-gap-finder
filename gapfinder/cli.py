@@ -142,6 +142,10 @@ class PoliteSession:
 
     def get_json(self, url: str, params: dict[str, Any]) -> dict[str, Any]:
         """GET a JSON endpoint with rate limiting and exponential backoff."""
+        if "action" in params:
+            # MediaWiki action API: back off when replicas are lagged, per
+            # https://www.mediawiki.org/wiki/API:Etiquette (non-interactive tasks).
+            params = {**params, "maxlag": "5"}
         last_err: Exception | None = None
         for attempt in range(1, MAX_RETRIES + 1):
             self._throttle()
@@ -152,7 +156,10 @@ class PoliteSession:
                 if resp.status_code == 429 or resp.status_code >= 500:
                     raise requests.HTTPError(f"HTTP {resp.status_code}")
                 resp.raise_for_status()
-                return resp.json()
+                data = resp.json()
+                if isinstance(data, dict) and data.get("error", {}).get("code") == "maxlag":
+                    raise requests.HTTPError("maxlag: servers lagged, backing off")
+                return data
             except (requests.RequestException, ValueError) as exc:
                 last_err = exc
                 self._last_request_ts = time.monotonic()
@@ -351,10 +358,12 @@ class GapResult:
     # supporting signals (all optional, filled as discovered)
     exact_title: str | None = None
     is_redirect: bool = False
+    is_disambig: bool = False
     redirect_target: str | None = None
     draft_title: str | None = None
     deletion_events: int = 0
     wikidata_id: str | None = None
+    wikidata_description: str | None = None
     enwiki_sitelink: str | None = None
     other_wikis: list[str] = field(default_factory=list)
     search_hits: list[str] = field(default_factory=list)
@@ -368,7 +377,8 @@ def _query_titles(session: PoliteSession, titles: list[str], redirects: bool) ->
     params = {
         "action": "query",
         "format": "json",
-        "prop": "info",
+        "prop": "info|pageprops",
+        "ppprop": "disambiguation",
         "titles": "|".join(titles),
         "formatversion": "2",
     }
@@ -383,6 +393,7 @@ def check_exact_title(session: PoliteSession, name: str) -> dict[str, Any]:
     findings: dict[str, Any] = {
         "exists": False,
         "is_redirect": False,
+        "is_disambig": False,
         "redirect_target": None,
         "title": None,
     }
@@ -398,6 +409,8 @@ def check_exact_title(session: PoliteSession, name: str) -> dict[str, Any]:
 
     findings["exists"] = True
     findings["title"] = page.get("title")
+    # A disambiguation page under the person's name is not their article.
+    findings["is_disambig"] = "disambiguation" in (page.get("pageprops") or {})
     if page.get("redirect"):
         findings["is_redirect"] = True
         # Resolve the redirect target with a second call.
@@ -458,24 +471,30 @@ def check_wikidata(session: PoliteSession, name: str) -> dict[str, Any]:
     """
     findings: dict[str, Any] = {
         "wikidata_id": None,
+        "description": None,
         "enwiki_sitelink": None,
         "other_wikis": [],
     }
 
-    # 1) search for the entity
+    # 1) search for the entity. Take a handful of hits and prefer one whose
+    # label matches the name exactly — hit #1 is often a namesake (a company,
+    # a different person) and picking it blindly mislabels the candidate.
     search = session.get_json(WIKIDATA_API, {
         "action": "wbsearchentities",
         "format": "json",
         "language": "en",
         "type": "item",
-        "limit": "1",
+        "limit": "5",
         "search": name,
     })
     hits = search.get("search", [])
     if not hits:
         return findings
-    qid = hits[0].get("id")
+    best = next((h for h in hits
+                 if (h.get("label") or "").lower() == name.lower()), hits[0])
+    qid = best.get("id")
     findings["wikidata_id"] = qid
+    findings["description"] = best.get("description") or None
 
     # 2) fetch sitelinks for that entity
     ent = session.get_json(WIKIDATA_API, {
@@ -504,8 +523,9 @@ def determine_status(r: GapResult) -> str:
     """Fold the collected signals into a single primary status using
     STATUS_PRIORITY. Multiple signals may apply; we surface the most important."""
     candidates: list[str] = []
+    has_own_article = bool(r.exact_title) and not r.is_redirect and not r.is_disambig
 
-    if r.exact_title and not r.is_redirect:
+    if has_own_article:
         candidates.append(STATUS_EXISTS)
     if r.enwiki_sitelink:
         candidates.append(STATUS_EXISTS)
@@ -513,7 +533,7 @@ def determine_status(r: GapResult) -> str:
         candidates.append(STATUS_REDIRECT_ONLY)
     if r.draft_title:
         candidates.append(STATUS_DRAFT_EXISTS)
-    if r.other_wikis and not r.enwiki_sitelink and not (r.exact_title and not r.is_redirect):
+    if r.other_wikis and not r.enwiki_sitelink and not has_own_article:
         candidates.append(STATUS_TRANSLATE_CANDIDATE)
     if r.deletion_events > 0:
         candidates.append(STATUS_DELETED_BEFORE)
@@ -536,6 +556,7 @@ def check_gap(session: PoliteSession, name: str) -> GapResult:
     exact = check_exact_title(session, name)
     r.exact_title = exact["title"]
     r.is_redirect = exact["is_redirect"]
+    r.is_disambig = exact["is_disambig"]
     r.redirect_target = exact["redirect_target"]
 
     # draft namespace
@@ -547,16 +568,24 @@ def check_gap(session: PoliteSession, name: str) -> GapResult:
     # wikidata sitelinks (translation signal)
     wd = check_wikidata(session, name)
     r.wikidata_id = wd["wikidata_id"]
+    r.wikidata_description = wd["description"]
     r.enwiki_sitelink = wd["enwiki_sitelink"]
     r.other_wikis = wd["other_wikis"]
 
     # fuzzy search safety net (only bother if we haven't confirmed an article)
-    if not (r.exact_title and not r.is_redirect) and not r.enwiki_sitelink:
+    if not (r.exact_title and not r.is_redirect and not r.is_disambig) and not r.enwiki_sitelink:
         r.search_hits = search_enwiki(session, name)
 
     r.status = determine_status(r)
 
     # human-readable notes
+    if r.is_disambig:
+        r.notes.append(f"'{r.exact_title}' is a disambiguation page — not the person's article")
+    if (r.wikidata_description and (r.enwiki_sitelink or r.other_wikis)
+            and not (r.exact_title and not r.is_redirect and not r.is_disambig)):
+        # The verdict leans on a Wikidata match — let the human catch a namesake.
+        r.notes.append(f"wikidata {r.wikidata_id}: '{r.wikidata_description}' — "
+                       "verify this is the same person")
     if r.status == STATUS_REDIRECT_ONLY and r.redirect_target:
         r.notes.append(f"redirects to '{r.redirect_target}' — counts as a gap")
     if r.status == STATUS_TRANSLATE_CANDIDATE:
@@ -629,6 +658,10 @@ def _row_detail(r: GapResult) -> str:
         detail = r.draft_title or ""
     elif r.status == STATUS_GAP:
         detail = f"wikidata: {r.wikidata_id or 'none'}"
+        if r.search_hits:
+            # Near-miss titles guard against announcing a "gap" that exists
+            # under a variant spelling (Sinead vs Sinéad).
+            detail += f" · near-misses: {', '.join(r.search_hits[:3])}"
     if r.deletion_events > 0 and r.status != STATUS_DELETED_BEFORE:
         detail += f"  (⚠ {r.deletion_events} prior deletion)"
     return detail
@@ -767,8 +800,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
                    help="skip the Wikidata SPARQL intake (use only CSV/txt name lists)")
     p.add_argument("--limit", type=int, metavar="N",
                    help="cap the number of candidate names processed (handy for testing)")
-    p.add_argument("--refresh-rsp", action="store_true",
-                   help="refresh the WP:RSP reliability cache before running")
     p.add_argument("--search-backend", choices=["ddg", "firecrawl"], default="ddg",
                    help="coverage-search backend for --dossier worklist building")
     p.add_argument("-v", "--verbose", action="store_true", help="DEBUG logging (logs every request)")
@@ -791,10 +822,6 @@ def main(argv: list[str] | None = None) -> int:
     session = PoliteSession()
 
     try:
-        if args.refresh_rsp:
-            from gapfinder import rsp as rsp_mod
-            rsp_mod.refresh_from_wikipedia(session)
-
         if args.check:
             names = collect_intake(campaign, session,
                                    use_sparql=not args.no_sparql, limit=args.limit)

@@ -44,6 +44,12 @@ with a fact-confirming reliable source. That is WP:SYNTH. Two half-sources = LEA
 If a claim is contentious (crime, health, sexuality, contested biography), it reaches
 VERIFIED only with a `GENERALLY_RELIABLE` source. Otherwise it is DEAD_END — never hedged.
 
+Per WP:BLPPRIVACY, the bar for personal information is higher than "a reliable source
+exists": never emit exact birthdates, home addresses, contact details, or names of the
+subject's family members in any verdict — even verified ones. Identity attributes
+(disability, sexuality, religion) appear only when the subject has publicly
+self-identified and the attribute is relevant to their public life (WP:BLPCAT).
+
 ## Output
 
 Write `vetting_verdicts.json` next to the worklist, matching

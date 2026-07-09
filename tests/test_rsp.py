@@ -30,10 +30,3 @@ def test_seed_ships_inside_the_package():
     pkg = Path(gapfinder.__file__).resolve().parent
     assert rsp._SEED_PATH.is_relative_to(pkg)
     assert rsp._SEED_PATH.exists()
-
-
-def test_cache_is_not_written_into_the_install():
-    # Refresh cache goes to a user dir, never into site-packages (read-only
-    # in many installs) or the repo checkout.
-    repo_or_site = Path(gapfinder.__file__).resolve().parent.parent
-    assert not rsp._CACHE_PATH.is_relative_to(repo_or_site)

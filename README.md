@@ -4,11 +4,13 @@ A campaign-driven pipeline that finds people from an underrepresented group who
 should have an English Wikipedia article but don't, checks every fact against real
 sources, and hands a human a research dossier they write the article from.
 
-> **The tool never writes article prose.** English Wikipedia banned
-> LLM-generated/-rewritten article text (RfC, March 2026). This tool does detective
-> work, verification, and structure only — a human writes every sentence. That isn't a
-> limitation to route around; it's the product's integrity claim: *AI found her and
-> checked the facts; a human wrote her story.*
+> **The tool never writes article prose.** English Wikipedia prohibits
+> LLM-generated/-rewritten article content (guideline enacted by RfC, March 2026, with
+> narrow copyedit and translation exceptions). This tool does detective work,
+> verification, and structure only — a human writes every sentence, and the dossier is
+> a map, not a source: the writer opens and reads every cited source themselves. That
+> isn't a limitation to route around; it's the product's integrity claim: *AI found her
+> and gathered the evidence; a human checked every source and wrote her story.*
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/ssskay/wiki-gap-finder/main/docs/images/pipeline-dark.svg">
@@ -83,7 +85,9 @@ gap-finder --campaign ... --dossier "Name" --search-backend firecrawl
 ```
 
 A campaign is one small YAML — swapping demographics is a new file, zero code
-changes. Minimal example:
+changes. One rule for lists naming living people (the spirit of WP:BLPCAT): only
+include identity attributes the person has publicly self-identified with, and only
+when they're relevant to their public life. Minimal example:
 
 ```yaml
 name: my-campaign
@@ -96,8 +100,7 @@ search_hints:                  # appended to coverage searches
   - "activist"
 ```
 
-Other flags: `--refresh-rsp` re-fetches the WP:RSP reliability cache (stored
-under `~/.cache/wiki-gap-finder/`), `-v` logs every request.
+Other flags: `-v` logs every request.
 
 **Heads-up on the keyless search default:** DuckDuckGo increasingly serves a
 bot challenge to non-browser clients. If coverage search comes back empty, the
@@ -108,10 +111,10 @@ tool now says so loudly — use `--search-backend firecrawl` (with the
 
 Zero API keys on the default path (MediaWiki + Wikidata + DuckDuckGo are keyless;
 Firecrawl is opt-in). Polite `User-Agent`, ≥1s between requests with exponential
-backoff.
+backoff, and `maxlag=5` on MediaWiki API calls so the tool yields when servers lag.
 
 ```bash
-python3 -m pytest      # 44 tests
+python3 -m pytest      # 54 tests
 ```
 
 ## Layout
