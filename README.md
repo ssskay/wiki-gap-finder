@@ -70,6 +70,23 @@ pip install "wiki-gap-finder[chase]"   # + the Firecrawl coverage backend
 Or clone this repo and run `python3 gap_finder.py ...` directly — same CLI
 (`pip3 install requests PyYAML jsonschema --break-system-packages`).
 
+## Install as a Claude skill
+
+The source vetter ships as a standalone Claude skill (`vet-sources`) — the
+reasoning half of the pipeline, packaged so Claude can classify sources and
+emit verdicts on its own. Two ways to install it:
+
+- **Download and drop into Claude.** Grab `vet-sources.skill` from the
+  [latest release](https://github.com/ssskay/wiki-gap-finder/releases/latest)
+  and drop the file into Claude (it's a zip with a top-level `vet-sources/`
+  folder — SKILL.md plus the JSON schemas it references).
+- **Clone into your skills directory.** Copy `skills/vet-sources/` into
+  `~/.claude/skills/`:
+
+  ```bash
+  cp -r skills/vet-sources ~/.claude/skills/
+  ```
+
 ## Usage
 
 Commands read and write paths relative to the current directory, so run them
@@ -123,7 +140,20 @@ python3 -m pytest      # 54 tests
 - `gapfinder/` — the package (cli, contract, rsp, search, worklist, verdicts, dossier)
 - `gapfinder/data/rsp_seed.json` — curated WP:RSP reliability seed (ships in the wheel)
 - `skills/vet-sources/SKILL.md` — the Claude subagent contract
+- `scripts/build_skill.sh` — packages the skill into `dist/vet-sources.skill`
 - `campaigns/` — one YAML per campaign
 - `docs/superpowers/` — design spec and implementation plan
+
+## Releasing
+
+Tag the version from `pyproject.toml`, cut a GitHub release, then build and
+attach the skill asset:
+
+```bash
+git tag -a vX.Y.Z -m "wiki-gap-finder vX.Y.Z" && git push origin vX.Y.Z
+gh release create vX.Y.Z --title vX.Y.Z --notes "..."
+scripts/build_skill.sh                              # → dist/vet-sources.skill
+gh release upload vX.Y.Z dist/vet-sources.skill
+```
 
 MIT licensed.
