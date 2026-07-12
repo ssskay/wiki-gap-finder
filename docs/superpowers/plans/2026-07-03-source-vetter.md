@@ -64,7 +64,7 @@ New Python modules import shared primitives (`PoliteSession`, `Campaign`, API co
 - [ ] **Step 1: Initialize git and ignore generated dirs**
 
 ```bash
-cd /Users/sarakay/wiki-gap-finder
+cd /Users/sarakay/Code/wiki-gap-finder
 git init
 ```
 
