@@ -1,0 +1,46 @@
+name: tests
+
+# The suite is hermetic: the search backends are exercised against saved
+# fixtures (tests/fixtures/ddg_result.html and friends), so nothing here
+# queries DuckDuckGo, Wikipedia, Wikidata, or Firecrawl.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.13']
+
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: actions/setup-python@v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install
+        # Base install only. [ui] (rich) is untouched by the suite, and every
+        # FirecrawlBackend test injects a fake `runner=`, so [chase] and the
+        # firecrawl binary are never needed — nor is the network.
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pytest
+
+      - name: Run tests
+        run: python -m pytest
