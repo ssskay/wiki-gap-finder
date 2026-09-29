@@ -1,5 +1,8 @@
 # Wikipedia Gap Finder v2
 
+<!-- sarakay.me/downloads -->
+**Install:** `pip install wiki-gap-finder` · [⬇ Claude skill: vet-sources](https://sarakay.me/get/wiki-gap-finder/claude-skill) · [all formats & checksums](https://sarakay.me/downloads.html#wiki-gap-finder)
+
 A campaign-driven pipeline that finds people from an underrepresented group who
 should have an English Wikipedia article but don't, checks every fact against real
 sources, and hands a human a research dossier they write the article from.
